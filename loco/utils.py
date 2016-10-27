@@ -17,3 +17,7 @@ def platform_fn(**kwargs):
     """ Helper function for os dependent implementations """
     operating_system = platform.system()
     return kwargs[operating_system]
+
+
+def is_on_apple():
+    return platform.system() == "Darwin"

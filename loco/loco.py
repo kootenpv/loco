@@ -4,6 +4,7 @@ import click
 import platform
 from loco.utils import write_to_clipboard
 from loco.utils import platform_fn
+from loco.utils import is_on_apple
 
 USER = "loco0"
 
@@ -30,7 +31,8 @@ def pubkey(pubfile, cat):
 
 
 def get_user_dir(user):
-    return os.path.join(os.path.dirname(os.path.expanduser("~")), user)
+    home = "/Users" if is_on_apple() else "/home"
+    return os.path.join(home, user)
 
 
 def get_random_uid():
@@ -241,14 +243,14 @@ def list_user(user, user_dir):
 def list():
     # e.g. /Users and /home
     home_not_user_folder = os.path.dirname(os.path.expanduser("~"))
-    is_not_apple = platform.system() != "Darwin"
-    if is_not_apple:
+    on_apple = is_on_apple()
+    if not on_apple:
         print("To read loco folder you need root on linux.")
     for user in os.listdir(home_not_user_folder):
         if not user.startswith("loco"):
             continue
         user_dir = os.path.join(home_not_user_folder, user)
-        if is_not_apple:
+        if not on_apple:
             try:
                 os.system("sudo chown -R $USER {}".format(user_dir))
                 list_user(user, user_dir)
