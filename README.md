@@ -51,10 +51,13 @@ user="loco0" port=52222 ssh_key=AAAAB3NzaC ..... joCyayMg+d account="pascal@T510
 loco create "PUBKEY" --user loco5 --port 5000
 
 # NOTE: default is to serve at 52222, so can be viewed at 52222
-loco listen IP --user loco5 --remote_port 5000
+loco listen --ip IP --user loco5 --remote_port 5000
 
 # Now receiver can locally view at 5000
-loco listen IP --user loco5 --remote_port 5000 --local_port 5000
+loco listen --ip IP --user loco5 --remote_port 5000 --local_port 5000
+
+# Same thing
+loco listen IP:5000:5000
 ```
 
 ### The interesting part
