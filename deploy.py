@@ -1,7 +1,7 @@
 """ File unrelated to the package, except for convenience in deploying """
 import re
 import sh
-
+import os
 
 commit_count = sh.git('rev-list', ['--all']).count('\n')
 
@@ -26,4 +26,5 @@ with open('loco/__init__.py', 'w') as f:
         re.sub('__version__ = "[0-9.]+"',
                '__version__ = "{}"'.format(version), init))
 
-print(sh.python('setup.py', ['sdist', 'bdist_wheel', 'upload']))
+py_version = "python3.5" if sh.which("python3.5") is not None else "python"
+os.system('{} setup.py sdist bdist_wheel upload'.format(py_version))
