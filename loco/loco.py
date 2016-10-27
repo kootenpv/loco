@@ -123,12 +123,27 @@ def remove_user(user):
     remove_user_fn(user)
 
 
-def public_port_exists(restrictions, public_key, port):
+def public_port_exists(rline, authorized_keys_file, restrictions, public_key, port):
     port = str(port)
+    new_restrictions = []
+    replaced = False
     for restriction in restrictions.split("\n"):
-        if public_key in restriction and port in restriction:
-            return True
-    return False
+        if public_key in restriction:
+            if ":" + port not in restriction:
+                new_opens = 'no-pty,permitopen="localhost:{0}",permitopen="127.0.0.1:{0}",'
+                restriction = restriction.replace("no-pty,", new_opens.format(port))
+                replaced = True
+            else:
+                print("public_key and port already exists in", authorized_keys_file)
+                return
+        new_restrictions.append(restriction)
+    print("Adding key+port rule to file")
+    if replaced:
+        with open(authorized_keys_file, "w") as f:
+            f.write("\n".join(new_restrictions) + "\n")
+    else:
+        with open(authorized_keys_file, "w") as f:
+            f.write(rline + "\n")
 
 
 @main.command()
@@ -153,12 +168,7 @@ def create(public_key, user, port):
         rline = get_restriction_line(port, public_key)
         authorized_keys_file = os.path.join(ssh_path, "authorized_keys")
         restrictions = read_restrictions(authorized_keys_file)
-        if public_port_exists(restrictions, public_key, port):
-            print("public_key and port already exists in", authorized_keys_file)
-        else:
-            print("Appending key and port rule to file")
-            with open(authorized_keys_file, "a") as f:
-                f.write(rline + "\n")
+        public_port_exists(rline, authorized_keys_file, restrictions, public_key, port)
     finally:
         # disable editing
         os.system("sudo chown -R {0} {1}".format(user, user_dir))
@@ -192,10 +202,12 @@ def listen(host, user, ip, background, local_port, remote_port):
             msg += "loco receive --ip IP                # --user is given by default\n"
             raise click.UsageError(msg)
         host = "{}@{}".format(user, ip)
+    connect_str = "Connecting with {}:{}, locally available at localhost:{}".format(
+        host, remote_port, local_port)
     if background:
-        print("Running loco in the background.")
+        print("Running loco in the background.", connect_str)
     else:
-        print("Running loco")
+        print("Running loco...", connect_str)
     background = "-f" if background else ""
     normalized_args = {"host": host, "bg": background, "local_port": local_port,
                        "remote_port": remote_port}
@@ -208,14 +220,15 @@ def list_user(user, user_dir):
     with open(auth_keys_file) as f:
         for line in f:
             line = line.strip()
-            port = re.findall("127.0.0.1:(\d+)", line)[0]
-            if "ssh-rsa" not in line:
-                print(line)
-                raise Exception("Please post an issue with above line")
-            key, account = line.split("ssh-rsa")[1].split()
-            repr_key = key[:10] + " ..... " + key[-10:]
-            tmpl = 'user="{}" port={} ssh_key={} account="{}"'
-            print(tmpl.format(user, port, repr_key, account))
+            for port in re.findall("127.0.0.1:(\d+)", line):
+                if "ssh-rsa" not in line:
+                    print(line)
+                    m = "Please post an issue with above line on https://github.com/kootenpv/loco"
+                    raise Exception(m)
+                key, account = line.split("ssh-rsa")[1].split()
+                repr_key = key[:10] + " ..... " + key[-10:]
+                tmpl = 'user="{}" port={} ssh_key={} account="{}"'
+                print(tmpl.format(user, port, repr_key, account))
 
 
 @main.command()
