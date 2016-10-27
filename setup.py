@@ -3,12 +3,12 @@ from setuptools import setup
 
 MAJOR_VERSION = '0'
 MINOR_VERSION = '0'
-MICRO_VERSION = '0'
+MICRO_VERSION = '2'
 VERSION = "{}.{}.{}".format(MAJOR_VERSION, MINOR_VERSION, MICRO_VERSION)
 
 setup(name='loco',
       version=VERSION,
-      description="Uses WiFi to tell you where you are",
+      description="Share localhost through SSH.",
       author='Pascal van Kooten',
       url='https://github.com/kootenpv/loco',
       author_email='kootenpv@gmail.com',

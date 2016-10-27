@@ -202,6 +202,12 @@ def listen(host, user, ip, background, local_port, remote_port):
             msg += "loco receive --ip IP                # --user is given by default\n"
             raise click.UsageError(msg)
         host = "{}@{}".format(user, ip)
+    if ":" in host:
+        parts = host.split(":")
+        if len(parts) == 3:
+            host, remote_port, local_port = parts
+        else:
+            host, remote_port = parts
     connect_str = "Connecting with {}:{}, locally available at localhost:{}".format(
         host, remote_port, local_port)
     if background:
