@@ -1,5 +1,5 @@
 """ Our tests are defined in here """
-from loco import main
+from loco.loco import main
 
 
 def test_run():
