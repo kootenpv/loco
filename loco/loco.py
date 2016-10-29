@@ -1,7 +1,8 @@
+import hashlib
 import re
 import os
 import click
-import platform
+import webbrowser
 from .utils import write_to_clipboard
 from .utils import platform_fn
 from .utils import is_on_apple
@@ -131,7 +132,7 @@ def public_port_exists(rline, authorized_keys_file, restrictions, public_key, po
     replaced = False
     for restriction in restrictions.split("\n"):
         if public_key in restriction:
-            if ":" + port not in restriction:
+            if ":" + port + '"' not in restriction:
                 new_opens = 'no-pty,permitopen="localhost:{0}",permitopen="127.0.0.1:{0}",'
                 restriction = restriction.replace("no-pty,", new_opens.format(port))
                 replaced = True
@@ -184,43 +185,75 @@ def kill(port=52222):
     os.system(cmd)
 
 
-@main.command()
-@click.argument("host", default=None, required=False)
-@click.option("--user", default=USER)
-@click.option("--ip", default=None)
-@click.option("--background", "-b", default=False, is_flag=True)
-@click.option("--local_port", default=52222)
-@click.option("--remote_port", default=52222)
-def listen(host, user, ip, background, local_port, remote_port):
-    """ Listen on a remote localhost port and serve it locally """
-    cmd = "ssh {host} {bg} -N -L localhost:{local_port}:localhost:{remote_port}"
-    if host is None:
-        if ip is None:
-            msg = "Provide either host or ip.\n"
-            msg += "Examples:\n"
-            msg += "loco receive USER@IP\n"
-            msg += "loco receive mybuddy                # .ssh/config \n"
-            msg += "loco receive --user loco0 --ip IP\n"
-            msg += "loco receive --ip IP                # --user is given by default\n"
-            raise click.UsageError(msg)
-        host = "{}@{}".format(user, ip)
+def get_host_and_ports(host, local_port, remote_port):
     if ":" in host:
         parts = host.split(":")
         if len(parts) == 3:
             host, remote_port, local_port = parts
         else:
             host, remote_port = parts
-    connect_str = "Connecting with {}:{}, locally available at localhost:{}".format(
-        host, remote_port, local_port)
-    if background:
-        print("Running loco in the background.", connect_str)
+    return host, local_port, remote_port
+
+
+@main.command()
+@click.argument("host", default=None, required=False)
+@click.option("--background", "-b", default=False, is_flag=True)
+@click.option("--local_port", default=52222)
+@click.option("--remote_port", default=52222)
+@click.option("--browse", default=False)
+def listen(host, background, local_port, remote_port, browse):
+    """ Listen on a remote localhost port and serve it locally.
+
+    Provide host.
+
+    \bExample:
+    loco listen USER@IP
+    """
+    norm_args = communicate(host, background, local_port, remote_port, listening=True)
+    if browse:
+        webbrowser.open("localhost:{}".format(norm_args['local_port']))
+
+
+@main.command()
+@click.argument("host", default=None, required=False)
+@click.option("--background", "-b", default=False, is_flag=True)
+@click.option("--local_port", default=52222)
+@click.option("--remote_port", default=52223)
+def cast(host, background, local_port, remote_port):
+    """ Cast to a remote localhost port from a local port.
+
+    Provide host.
+
+    \b
+    Examples:
+    loco cast USER@IP
+    """
+    communicate(host, background, local_port, remote_port, listening=False)
+
+
+def communicate(host, background, local_port, remote_port, listening):
+    host, local_port, remote_port = get_host_and_ports(host, local_port, remote_port)
+
+    if listening:
+        action = "LOCALLY available at"
+        RorL = "-L"
+        local_port, remote_port = remote_port, local_port
     else:
-        print("Running loco...", connect_str)
+        action = "CASTING from"
+        RorL = "-R"
+
     background = "-f" if background else ""
     normalized_args = {"host": host, "bg": background, "local_port": local_port,
-                       "remote_port": remote_port}
+                       "remote_port": remote_port, "RorL": RorL}
+
+    msg = "Connecting with {}:{}, {} localhost:{} in_background={}"
+    connect_str = msg.format(host, remote_port, action, local_port, bool(background))
+    print(connect_str)
+
+    cmd = "ssh {host} {bg} -N {RorL} localhost:{local_port}:localhost:{remote_port}"
     cmd = cmd.format(**normalized_args)
     os.system(cmd)
+    return normalized_args
 
 
 def list_user(user, user_dir):
@@ -241,8 +274,9 @@ def list_user(user, user_dir):
 
 @main.command()
 def list():
+    """ List all allowed connections """
     # e.g. /Users and /home
-    home_not_user_folder = os.path.dirname(os.path.expanduser("~"))
+    home_not_user_folder = get_user_dir("")
     on_apple = is_on_apple()
     if not on_apple:
         print("To read loco folder you need root on linux.")
@@ -258,3 +292,16 @@ def list():
                 os.system("sudo chown -R {0} {1}".format(user, user_dir))
         else:
             list_user(user, user_dir)
+
+
+def get_hash_ports(word):
+    h = str(int(hashlib.sha1(word.encode("utf8")).hexdigest(), 16))
+    root = None
+    for i in range(len(h) - 5):
+        tmp = int(h[i:i + 5])
+        if 3000 < tmp < 65536:
+            root = tmp
+            break
+    listen_port = root
+    cast_port = root + 1
+    return listen_port, cast_port
