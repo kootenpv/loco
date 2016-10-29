@@ -192,7 +192,7 @@ def get_host_and_ports(host, local_port, remote_port):
             host, remote_port, local_port = parts
         else:
             host, remote_port = parts
-    return host, local_port, remote_port
+    return host, None, None
 
 
 @main.command()
@@ -232,15 +232,16 @@ def cast(host, background, local_port, remote_port):
 
 
 def communicate(host, background, local_port, remote_port, listening):
-    host, local_port, remote_port = get_host_and_ports(host, local_port, remote_port)
+    host, _, _ = get_host_and_ports(host, local_port, remote_port)
 
     if listening:
         action = "LOCALLY available at"
         RorL = "-L"
-        local_port, remote_port = remote_port, local_port
+        cmd = "ssh {host} {bg} -N {RorL} localhost:{remote_port}:localhost:{local_port}"
     else:
         action = "CASTING from"
         RorL = "-R"
+        cmd = "ssh {host} {bg} -N {RorL} localhost:{local_port}:localhost:{remote_port}"
 
     background = "-f" if background else ""
     normalized_args = {"host": host, "bg": background, "local_port": local_port,
@@ -250,7 +251,6 @@ def communicate(host, background, local_port, remote_port, listening):
     connect_str = msg.format(host, remote_port, action, local_port, bool(background))
     print(connect_str)
 
-    cmd = "ssh {host} {bg} -N {RorL} localhost:{local_port}:localhost:{remote_port}"
     cmd = cmd.format(**normalized_args)
     os.system(cmd)
     return normalized_args
