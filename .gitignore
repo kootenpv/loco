@@ -16,3 +16,4 @@ __pycache__/
 /pip-selfcheck.json
 .tox/
 .cache
+.coverage

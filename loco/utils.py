@@ -4,13 +4,14 @@ import subprocess
 
 def write_to_clipboard(output):
     system = platform.system()
+    output = output.encode('utf-8')
     if system == "Darwin":
         cmd = ['pbcopy']
     else:
         cmd = ["xclip", "-selection", "clipboard"]
-        subprocess.Popen(cmd, stdin=subprocess.PIPE).communicate(output.encode('utf-8'))
+        subprocess.Popen(cmd, stdin=subprocess.PIPE).communicate(output)
         cmd = ["xclip", "-selection", "primary"]
-    subprocess.Popen(cmd, stdin=subprocess.PIPE).communicate(output.encode('utf-8'))
+    subprocess.Popen(cmd, stdin=subprocess.PIPE).communicate(output)
 
 
 def platform_fn(**kwargs):

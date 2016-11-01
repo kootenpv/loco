@@ -1,8 +1,9 @@
 import hashlib
 import re
 import os
-import click
 import webbrowser
+import click
+
 from .utils import write_to_clipboard
 from .utils import platform_fn
 from .utils import is_on_apple
@@ -22,6 +23,7 @@ def pubkey(pubfile, cat):
     """ Copies your pubkey to clipboard"""
     if pubfile is None:
         pubfile = "id_rsa.pub"
+
     with open(os.path.expanduser("~/.ssh/" + pubfile)) as f:
         public_key = f.read().strip()
     if not cat:
@@ -123,7 +125,7 @@ def remove_user(user):
             return
     os_dependent_functions = {"Darwin": remove_user_osx, "Linux": remove_user_linux}
     remove_user_fn = platform_fn(**os_dependent_functions)
-    remove_user_fn(user)
+    donotrun(remove_user_fn, user)
 
 
 def public_port_exists(rline, authorized_keys_file, restrictions, public_key, port):
@@ -142,11 +144,11 @@ def public_port_exists(rline, authorized_keys_file, restrictions, public_key, po
         new_restrictions.append(restriction)
     print("Adding key+port rule to file")
     if replaced:
-        with open(authorized_keys_file, "w") as f:
-            f.write("\n".join(new_restrictions) + "\n")
+        result = "\n".join(new_restrictions)
     else:
-        with open(authorized_keys_file, "w") as f:
-            f.write(rline + "\n")
+        result = rline
+    with open(authorized_keys_file, "w") as f:
+        f.write(result + "\n")
 
 
 @main.command()
@@ -186,7 +188,7 @@ def kill(port=52222):
 
 
 @main.command()
-@click.argument("host", default=None, required=False)
+@click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
 @click.option("--local_port", default=52222)
 @click.option("--remote_port", default=52222)
@@ -205,10 +207,10 @@ def listen(host, background, local_port, remote_port, browse):
 
 
 @main.command()
-@click.argument("host", default=None, required=False)
+@click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
 @click.option("--local_port", default=52222)
-@click.option("--remote_port", default=52223)
+@click.option("--remote_port", default=52222)
 def cast(host, background, local_port, remote_port):
     """ Cast to a remote localhost port from a local port.
 
@@ -251,7 +253,7 @@ def list_user(user, user_dir):
     with open(auth_keys_file) as f:
         for line in f:
             line = line.strip()
-            for port in re.findall("127.0.0.1:(\d+)", line):
+            for port in re.findall(r"127.0.0.1:(\d+)", line):
                 if "ssh-rsa" not in line:
                     print(line)
                     m = "Please post an issue with above line on https://github.com/kootenpv/loco"
@@ -263,7 +265,7 @@ def list_user(user, user_dir):
 
 
 @main.command()
-def list():
+def ls():
     """ List all allowed connections """
     # e.g. /Users and /home
     home_not_user_folder = get_user_dir("")
@@ -284,14 +286,12 @@ def list():
             list_user(user, user_dir)
 
 
-def get_hash_ports(word):
+def get_hash_port(word):
     h = str(int(hashlib.sha1(word.encode("utf8")).hexdigest(), 16))
-    root = None
+    port = None
     for i in range(len(h) - 5):
         tmp = int(h[i:i + 5])
         if 3000 < tmp < 65536:
-            root = tmp
+            port = tmp
             break
-    listen_port = root
-    cast_port = root + 1
-    return listen_port, cast_port
+    return port
