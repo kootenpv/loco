@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/loco.svg?style=flat-square)](https://pypi.python.org/pypi/loco/)
 [![PyPI](https://img.shields.io/pypi/pyversions/loco.svg?style=flat-square)](https://pypi.python.org/pypi/loco/)
 
-Share localhost through SSH. Making local/remote port forwarding easy.
+Share localhost through SSH. Making local/remote port forwarding easy and safe.
 
 ### Story
 
@@ -29,6 +29,7 @@ When you are behind a (company) firewall/router, then there are 3 possible solut
 - **Safety**. Nothing beats SSH. The only open port required is 22. Share your HTTP through SSH!
 - **Containment**. Specifically creates an SSH user that can ONLY do port forwarding; nothing else.
 - **Cross-platform**. Works on OSX and Linux in general.
+- **No 3rd party**. Unlike `ngrok`, you won't need to rely on a third party.
 
 ### Installation
 
