@@ -4,9 +4,9 @@ import os
 import webbrowser
 import click
 
-from loco.utils import write_to_clipboard
-from loco.utils import platform_fn
-from loco.utils import is_on_apple
+from .utils import write_to_clipboard
+from .utils import platform_fn
+from .utils import is_on_apple
 
 USER = "loco0"
 

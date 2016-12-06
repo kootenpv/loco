@@ -6,7 +6,6 @@ loco.main
 loco.print_version
 """
 import sys
-from loco import loco
 
 __project__ = "loco"
 __version__ = "0.1.11"
