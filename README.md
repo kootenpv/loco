@@ -68,9 +68,6 @@ loco listen loco5@someip --remote_port 5000 --local_port 5000
 
 # push your content to someone who created a loco user for you
 loco cast loco5@someip --remote_port 5000 --local_port 5000
-
-# Expose will open beyond the machine (serving on 0.0.0.0 and not localhost)
-loco listen loco5@someip --expose
 ```
 
 For issues, such as both parties being within a firewall, you can use a server in between (e.g. some cloud instance).

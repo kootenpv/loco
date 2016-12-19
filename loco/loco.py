@@ -190,11 +190,10 @@ def kill(port=52222):
 @main.command()
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
-@click.option("--local_port", "-l", default=52222)
-@click.option("--remote_port", "-r", default=52222)
-@click.option("--expose", default=False, is_flag=True)
+@click.option("--local_port", default=52222)
+@click.option("--remote_port", default=52222)
 @click.option("--browse", default=True)
-def listen(host, background, local_port, remote_port, expose, browse):
+def listen(host, background, local_port, remote_port, browse):
     """ Listen on a remote localhost port and serve it locally.
 
     Provide host.
@@ -202,7 +201,7 @@ def listen(host, background, local_port, remote_port, expose, browse):
     \bExample:
     loco listen USER@IP
     """
-    norm_args = communicate(host, background, local_port, remote_port, expose, listening=True)
+    norm_args = communicate(host, background, local_port, remote_port, listening=True)
     if browse:
         webbrowser.open("localhost:{}".format(norm_args['local_port']))
 
@@ -210,10 +209,9 @@ def listen(host, background, local_port, remote_port, expose, browse):
 @main.command()
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
-@click.option("--local_port", "-l", default=52222)
-@click.option("--expose", "-e", default=False, is_flag=True)
-@click.option("--remote_port", "-r", default=52222)
-def cast(host, background, local_port, expose, remote_port):
+@click.option("--local_port", default=52222)
+@click.option("--remote_port", default=52222)
+def cast(host, background, local_port, remote_port):
     """ Cast to a remote localhost port from a local port.
 
     Provide host.
@@ -222,28 +220,27 @@ def cast(host, background, local_port, expose, remote_port):
     Examples:
     loco cast USER@IP
     """
-    communicate(host, background, local_port, remote_port, expose, listening=False)
+    communicate(host, background, local_port, remote_port, listening=False)
 
 
-def communicate(host, background, local_port, remote_port, expose, listening):
+def communicate(host, background, local_port, remote_port, listening):
     host = host.split(":")[0]
 
-    ip = "0.0.0.0" if expose else "localhost"
     if listening:
         action = "LOCALLY available at"
         RorL = "-L"
-        cmd = "ssh {host} {bg} -N {RorL} {ip}:{local_port}:localhost:{remote_port}"
+        cmd = "ssh {host} {bg} -N {RorL} localhost:{local_port}:localhost:{remote_port}"
     else:
         action = "CASTING from"
         RorL = "-R"
-        cmd = "ssh {host} {bg} -N {RorL} localhost:{remote_port}:{ip}:{local_port}"
+        cmd = "ssh {host} {bg} -N {RorL} localhost:{remote_port}:localhost:{local_port}"
 
     background = "-f" if background else ""
     normalized_args = {"host": host, "bg": background, "local_port": local_port,
-                       "remote_port": remote_port, "RorL": RorL, "ip": ip}
+                       "remote_port": remote_port, "RorL": RorL}
 
-    msg = "Connecting with {}:{}, {} {}:{} in_background={}"
-    connect_str = msg.format(host, remote_port, action, ip, local_port, bool(background))
+    msg = "Connecting with {}:{}, {} localhost:{} in_background={}"
+    connect_str = msg.format(host, remote_port, action, local_port, bool(background))
     print(connect_str)
 
     cmd = cmd.format(**normalized_args)
