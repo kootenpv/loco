@@ -190,9 +190,9 @@ def kill(port=52222):
 @main.command()
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
-@click.option("--local_port", default=52222)
-@click.option("--remote_port", default=52222)
-@click.option("--expose", default=False)
+@click.option("--local_port", "-l", default=52222)
+@click.option("--remote_port", "-r", default=52222)
+@click.option("--expose", default=False, is_flag=True)
 @click.option("--browse", default=True)
 def listen(host, background, local_port, remote_port, expose, browse):
     """ Listen on a remote localhost port and serve it locally.
@@ -210,9 +210,9 @@ def listen(host, background, local_port, remote_port, expose, browse):
 @main.command()
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
-@click.option("--local_port", default=52222)
-@click.option("--expose", default=False)
-@click.option("--remote_port", default=52222)
+@click.option("--local_port", "-l", default=52222)
+@click.option("--expose", "-e", default=False, is_flag=True)
+@click.option("--remote_port", "-r", default=52222)
 def cast(host, background, local_port, expose, remote_port):
     """ Cast to a remote localhost port from a local port.
 
