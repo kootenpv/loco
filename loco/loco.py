@@ -236,7 +236,7 @@ def communicate(host, background, local_port, remote_port, expose, listening):
     else:
         action = "CASTING from"
         RorL = "-R"
-        cmd = "ssh {host} {bg} -N {RorL} {ip}:{remote_port}:localhost:{local_port}"
+        cmd = "ssh {host} {bg} -N {RorL} localhost:{remote_port}:{ip}:{local_port}"
 
     background = "-f" if background else ""
     normalized_args = {"host": host, "bg": background, "local_port": local_port,
