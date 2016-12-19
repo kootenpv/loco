@@ -222,7 +222,7 @@ def cast(host, background, local_port, expose, remote_port):
     Examples:
     loco cast USER@IP
     """
-    communicate(host, background, local_port, remote_port, listening=False)
+    communicate(host, background, local_port, remote_port, expose, listening=False)
 
 
 def communicate(host, background, local_port, remote_port, expose, listening):
