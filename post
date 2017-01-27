@@ -1,0 +1,15 @@
+Traditional
+
+PC + Firewall (White/Blacklisting)
+
+Protocols
+
+- HTTP
+- HTTPS
+- SSH
+
+Gain access to computer:
+
+- ssh access / login
+- login on your pc "physically"
+- install software under root
