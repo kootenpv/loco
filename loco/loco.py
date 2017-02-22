@@ -202,7 +202,8 @@ def listen(host, background, expose, local_port, remote_port, browse):
     \bExample:
     loco listen USER@IP
     """
-    norm_args = communicate(host, background, expose, local_port, remote_port, listening=True, browse)
+    listening = True
+    norm_args = communicate(host, background, expose, local_port, remote_port, listening, browse)
 
 
 @main.command()
