@@ -202,9 +202,7 @@ def listen(host, background, expose, local_port, remote_port, browse):
     \bExample:
     loco listen USER@IP
     """
-    norm_args = communicate(host, background, expose, local_port, remote_port, listening=True)
-    if browse:
-        webbrowser.open("localhost:{}".format(norm_args['local_port']))
+    norm_args = communicate(host, background, expose, local_port, remote_port, listening=True, browse)
 
 
 @main.command()
@@ -222,10 +220,10 @@ def cast(host, background, expose, local_port, remote_port):
     Examples:
     loco cast USER@IP
     """
-    communicate(host, background, expose, local_port, remote_port, listening=False)
+    communicate(host, background, expose, local_port, remote_port, listening=False, browse=False)
 
 
-def communicate(host, background, expose, local_port, remote_port, listening):
+def communicate(host, background, expose, local_port, remote_port, listening, browse=False):
     host = host.split(":")[0]
 
     interface = "0.0.0.0" if expose else "localhost"
@@ -248,6 +246,8 @@ def communicate(host, background, expose, local_port, remote_port, listening):
     print(connect_str)
 
     cmd = cmd.format(**normalized_args)
+    if browse:
+        webbrowser.open("localhost:{}".format(local_port))
     os.system(cmd)
     return normalized_args
 
