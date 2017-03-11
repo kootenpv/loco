@@ -248,7 +248,7 @@ def communicate(host, background, expose, local_port, remote_port, listening, br
 
     cmd = cmd.format(**normalized_args)
     if browse:
-        webbrowser.open("localhost:{}".format(local_port))
+        webbrowser.open("localhost:{}".format(local_port), new=True)
     os.system(cmd)
     return normalized_args
 
