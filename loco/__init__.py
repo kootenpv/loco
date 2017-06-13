@@ -8,7 +8,7 @@ loco.print_version
 import sys
 
 __project__ = "loco"
-__version__ = "0.1.24"
+__version__ = "0.1.26"
 
 
 def print_version():

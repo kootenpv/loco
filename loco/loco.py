@@ -210,8 +210,8 @@ def listen(host, background, expose, local_port, remote_port, browse):
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
 @click.option("--expose", "-e", default=False, is_flag=True)
-@click.option("--local_port", default=52222)
-@click.option("--remote_port", default=52222)
+@click.option("--local_port", default=None)
+@click.option("--remote_port", default=None)
 def cast(host, background, expose, local_port, remote_port):
     """ Cast to a remote localhost port from a local port.
 
@@ -236,6 +236,12 @@ def communicate(host, background, expose, local_port, remote_port, listening, br
         action = "CASTING from"
         RorL = "-R"
         cmd = "ssh {host} {bg} -N {RorL} {interface}:{remote_port}:localhost:{local_port}"
+
+    local_port = local_port if local_port is not None else remote_port
+    remote_port = remote_port if remote_port is not None else local_port
+
+    local_port = local_port if local_port is not None else 52222
+    remote_port = remote_port if remote_port is not None else 52222
 
     background = "-f" if background else ""
     normalized_args = {"host": host, "bg": background, "local_port": local_port,
