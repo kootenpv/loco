@@ -191,8 +191,8 @@ def kill(port=52222):
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
 @click.option("--expose", "-e", default=False, is_flag=True)
-@click.option("--local_port", default=52222)
-@click.option("--remote_port", default=52222)
+@click.option("--local_port", default=None)
+@click.option("--remote_port", default=None)
 @click.option("--browse", default=False, is_flag=True)
 def listen(host, background, expose, local_port, remote_port, browse):
     """ Listen on a remote localhost port and serve it locally.
