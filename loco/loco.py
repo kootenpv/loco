@@ -1,12 +1,14 @@
 import hashlib
 import re
 import os
+import itertools
 import webbrowser
 import click
 
 from .utils import write_to_clipboard
 from .utils import platform_fn
 from .utils import is_on_apple
+
 
 USER = "loco0"
 
@@ -40,18 +42,22 @@ def get_user_dir(user):
 
 def get_random_uid():
     import random
+
     return random.randint(1000, 3000)
 
 
-def get_restriction_line(port=52222,
-                         public_key=None,
-                         denied_msg="'Loco account only allows port forwarding.'",
-                         denies="no-X11-forwarding,no-agent-forwarding,no-pty"):
+def get_restriction_line(
+    port=52222,
+    public_key=None,
+    denied_msg="'Loco account only allows port forwarding.'",
+    denies="no-X11-forwarding,no-agent-forwarding,no-pty",
+):
     if not public_key:
         raise ValueError("public_key should be set? or password method (TODO)")
     permit_open = 'permitopen="localhost:{0}",permitopen="127.0.0.1:{0}"'.format(port)
     restriction = 'command="echo {0}",{1},{2} {3}'.format(
-        denied_msg, denies, permit_open, public_key)
+        denied_msg, denies, permit_open, public_key
+    )
     return restriction
 
 
@@ -77,14 +83,16 @@ def create_user_osx(user=USER):
     uid = get_random_uid()
     ensure_rbash_osx()
     os.system("sudo dscl . -create /groups/loco && sudo dscl . -append /groups/loco gid 622")
-    cmds = ['sudo dscl . -create /Users/{0} UniqueID "{1}"',
-            'sudo dscl . -create /Users/{0}',
-            'sudo dscl . -create /Users/{0} RealName "Lo Co"',
-            # eventually remove this one below
-            'sudo dscl . -create /Users/{0} UserShell /usr/local/rbash',
-            'sudo dscl . -create /Users/{0} PrimaryGroupID 20',
-            # home dir does not work yet
-            'sudo dscl . -create /Users/{0} NFSHomeDirectory /Users/{0}']
+    cmds = [
+        'sudo dscl . -create /Users/{0} UniqueID "{1}"',
+        'sudo dscl . -create /Users/{0}',
+        'sudo dscl . -create /Users/{0} RealName "Lo Co"',
+        # eventually remove this one below
+        'sudo dscl . -create /Users/{0} UserShell /usr/local/rbash',
+        'sudo dscl . -create /Users/{0} PrimaryGroupID 20',
+        # home dir does not work yet
+        'sudo dscl . -create /Users/{0} NFSHomeDirectory /Users/{0}',
+    ]
     cmd = " && ".join(cmds).format(user, uid)
     os.system(cmd)
     os.system("sudo mkdir {}".format(user_dir))
@@ -191,8 +199,8 @@ def kill(port=52222):
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
 @click.option("--expose", "-e", default=False, is_flag=True)
-@click.option("--local_port", default=None)
-@click.option("--remote_port", default=None)
+@click.option("--local_port", "-l", multiple=True)
+@click.option("--remote_port", "-r", multiple=True)
 @click.option("--browse", default=False, is_flag=True)
 def listen(host, background, expose, local_port, remote_port, browse):
     """ Listen on a remote localhost port and serve it locally.
@@ -210,8 +218,8 @@ def listen(host, background, expose, local_port, remote_port, browse):
 @click.argument("host", default=None, required=True)
 @click.option("--background", "-b", default=False, is_flag=True)
 @click.option("--expose", "-e", default=False, is_flag=True)
-@click.option("--local_port", default=None)
-@click.option("--remote_port", default=None)
+@click.option("--local_port", "-l", multiple=True)
+@click.option("--remote_port", "-r", multiple=True)
 def cast(host, background, expose, local_port, remote_port):
     """ Cast to a remote localhost port from a local port.
 
@@ -231,32 +239,40 @@ def communicate(host, background, expose, local_port, remote_port, listening, br
     if listening:
         action = "LOCALLY available at"
         RorL = "-L"
-        cmd = "ssh {host} {bg} -N {RorL} {interface}:{local_port}:localhost:{remote_port}"
+        inner_part = " {RorL} {interface}:{local_port}:localhost:{remote_port}"
+        cmd = "ssh {host} {bg} -N {inner_part}"
     else:
         action = "CASTING from"
         RorL = "-R"
-        cmd = "ssh {host} {bg} -N {RorL} {interface}:{remote_port}:localhost:{local_port}"
-
-    local_port = local_port if local_port is not None else remote_port
-    remote_port = remote_port if remote_port is not None else local_port
-
-    local_port = local_port if local_port is not None else 52222
-    remote_port = remote_port if remote_port is not None else 52222
+        inner_part = " {RorL} {interface}:{remote_port}:localhost:{local_port}"
+        cmd = "ssh {host} {bg} -N {inner_part}"
 
     background = "-f" if background else ""
-    normalized_args = {"host": host, "bg": background, "local_port": local_port,
-                       "remote_port": remote_port, "RorL": RorL,
-                       "interface": interface}
+    inner_kwargs = {"RorL": RorL, "interface": interface}
+    outer_kwargs = {"host": host, "bg": background, "inner_part": ""}
 
-    msg = "Connecting with {}:{}, {} localhost:{} in_background={}"
-    connect_str = msg.format(host, remote_port, action, local_port, bool(background))
-    print(connect_str)
+    for local_p, remote_p in itertools.zip_longest(local_port, remote_port):
 
-    cmd = cmd.format(**normalized_args)
-    if browse:
-        webbrowser.open("localhost:{}".format(local_port), new=True)
+        local_p = local_p if local_p else remote_p
+        remote_p = remote_p if remote_p else local_p
+
+        local_p = local_p if local_p else 52222
+        remote_p = remote_p if remote_p else 52222
+
+        inner_kwargs["local_port"] = local_p
+        inner_kwargs["remote_port"] = remote_p
+
+        msg = "Connecting with {}:{}, {} localhost:{} in_background={}"
+        connect_str = msg.format(host, remote_p, action, local_p, bool(background))
+        print(connect_str)
+
+        if browse:
+            webbrowser.open("localhost:{}".format(local_p), new=True)
+
+        outer_kwargs["inner_part"] += inner_part.format(**inner_kwargs)
+    cmd = cmd.format(**outer_kwargs)
     os.system(cmd)
-    return normalized_args
+    return outer_kwargs
 
 
 def list_user(user, user_dir):
@@ -283,9 +299,11 @@ def ls():
     on_apple = is_on_apple()
     if not on_apple:
         print("To read loco folder you need root on linux.")
+    any_connection = False
     for user in os.listdir(home_not_user_folder):
         if not user.startswith("loco"):
             continue
+        any_connection = True
         user_dir = os.path.join(home_not_user_folder, user)
         if not on_apple:
             try:
@@ -295,13 +313,15 @@ def ls():
                 os.system("sudo chown -R {0} {1}".format(user, user_dir))
         else:
             list_user(user, user_dir)
+    if not any_connection:
+        print("No connection rules found.")
 
 
 def get_hash_port(word):
     h = str(int(hashlib.sha1(word.encode("utf8")).hexdigest(), 16))
     port = None
     for i in range(len(h) - 5):
-        tmp = int(h[i:i + 5])
+        tmp = int(h[i : i + 5])
         if 3000 < tmp < 65536:
             port = tmp
             break
