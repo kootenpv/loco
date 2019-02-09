@@ -60,14 +60,11 @@ user="loco0" port=52222 ssh_key=AAAAB3NzaC ..... joCyayMg+d account="pascal@T510
 # And don't forget the quotes
 loco create "PUBKEY" loco5@someip --port 5000
 
-# NOTE: default is to serve at 52222, so can be viewed at 52222
+# NOTE: default is to serve at same as remote/local, need to give 1
 loco listen loco5@someip --remote_port 5000
 
-# Now receiver can locally view at 5000
-loco listen loco5@someip --remote_port 5000 --local_port 5000
-
 # push your content to someone who created a loco user for you
-loco cast loco5@someip --remote_port 5000 --local_port 5000
+loco cast loco5@someip --local_port 5000
 
 # --expose exposes `listen` or `cast` to 0.0.0.0
 # requires ssh to accept casting, i.e.:
