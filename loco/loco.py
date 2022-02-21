@@ -22,7 +22,7 @@ def main():
 @click.argument("pubfile", default=None, required=False)
 @click.option("--cat", default=False, is_flag=True)
 def pubkey(pubfile, cat):
-    """ Copies your pubkey to clipboard"""
+    """Copies your pubkey to clipboard"""
     if pubfile is None:
         pubfile = "id_rsa.pub"
 
@@ -55,9 +55,7 @@ def get_restriction_line(
     if not public_key:
         raise ValueError("public_key should be set? or password method (TODO)")
     permit_open = 'permitopen="localhost:{0}",permitopen="127.0.0.1:{0}"'.format(port)
-    restriction = 'command="echo {0}",{1},{2} {3}'.format(
-        denied_msg, denies, permit_open, public_key
-    )
+    restriction = 'command="echo {0}",{1},{2} {3}'.format(denied_msg, denies, permit_open, public_key)
     return restriction
 
 
@@ -85,13 +83,13 @@ def create_user_osx(user=USER):
     os.system("sudo dscl . -create /groups/loco && sudo dscl . -append /groups/loco gid 622")
     cmds = [
         'sudo dscl . -create /Users/{0} UniqueID "{1}"',
-        'sudo dscl . -create /Users/{0}',
+        "sudo dscl . -create /Users/{0}",
         'sudo dscl . -create /Users/{0} RealName "Lo Co"',
         # eventually remove this one below
-        'sudo dscl . -create /Users/{0} UserShell /usr/local/rbash',
-        'sudo dscl . -create /Users/{0} PrimaryGroupID 20',
+        "sudo dscl . -create /Users/{0} UserShell /usr/local/rbash",
+        "sudo dscl . -create /Users/{0} PrimaryGroupID 20",
         # home dir does not work yet
-        'sudo dscl . -create /Users/{0} NFSHomeDirectory /Users/{0}',
+        "sudo dscl . -create /Users/{0} NFSHomeDirectory /Users/{0}",
     ]
     cmd = " && ".join(cmds).format(user, uid)
     os.system(cmd)
@@ -123,7 +121,7 @@ def create_user(user):
 @main.command()
 @click.argument("user", default=USER)
 def remove_user(user):
-    """ Used to remove a loco user """
+    """Used to remove a loco user"""
     if user in os.path.expanduser("~"):
         raise Exception("Cannot delete self")
     if not user.startswith("loco"):
@@ -164,7 +162,7 @@ def public_port_exists(rline, authorized_keys_file, restrictions, public_key, po
 @click.option("--user", default=USER)
 @click.option("--port", default=52222)
 def create(public_key, user, port):
-    """ Creates exception at a port for a user for local tunnelling. Creates user if not existing. """
+    """Creates exception at a port for a user for local tunnelling. Creates user if not existing."""
     # has to be done in two, hideous but don't try to be the wise guy
     # dirname is not actually dirname, it means path up
     user_dir = get_user_dir(user)
@@ -190,7 +188,7 @@ def create(public_key, user, port):
 @main.command()
 @click.argument("port", default=52222)
 def kill(port=52222):
-    """ Kill the local server at a given port """
+    """Kill the local server at a given port"""
     cmd = "kill $(ps aux | grep " + str(port) + " | grep -v grep | awk '{print $2}')"
     os.system(cmd)
 
@@ -202,8 +200,9 @@ def kill(port=52222):
 @click.option("--local_port", "-l", multiple=True)
 @click.option("--remote_port", "-r", multiple=True)
 @click.option("--browse", default=False, is_flag=True)
-def listen(host, background, expose, local_port, remote_port, browse):
-    """ Listen on a remote localhost port and serve it locally.
+@click.option("--ignore_host", default=False, is_flag=True)
+def listen(host, background, expose, local_port, remote_port, browse, ignore_host):
+    """Listen on a remote localhost port and serve it locally.
 
     Provide host.
 
@@ -211,7 +210,7 @@ def listen(host, background, expose, local_port, remote_port, browse):
     loco listen USER@IP
     """
     listening = True
-    norm_args = communicate(host, background, expose, local_port, remote_port, listening, browse)
+    norm_args = communicate(host, background, expose, local_port, remote_port, listening, browse, ignore_host)
 
 
 @main.command()
@@ -220,8 +219,9 @@ def listen(host, background, expose, local_port, remote_port, browse):
 @click.option("--expose", "-e", default=False, is_flag=True)
 @click.option("--local_port", "-l", multiple=True)
 @click.option("--remote_port", "-r", multiple=True)
-def cast(host, background, expose, local_port, remote_port):
-    """ Cast to a remote localhost port from a local port.
+@click.option("--ignore_host", default=False, is_flag=True)
+def cast(host, background, expose, local_port, remote_port, ignore_host):
+    """Cast to a remote localhost port from a local port.
 
     Provide host.
 
@@ -229,27 +229,30 @@ def cast(host, background, expose, local_port, remote_port):
     Examples:
     loco cast USER@IP
     """
-    communicate(host, background, expose, local_port, remote_port, listening=False, browse=False)
+    communicate(
+        host, background, expose, local_port, remote_port, listening=False, browse=False, ignore_host=ignore_host
+    )
 
 
-def communicate(host, background, expose, local_port, remote_port, listening, browse=False):
+def communicate(host, background, expose, local_port, remote_port, listening, browse=False, ignore_host=False):
     host = host.split(":")[0]
 
     interface = "0.0.0.0" if expose else "localhost"
+    ignore_host = " -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null " if ignore_host else ""
     if listening:
         action = "LOCALLY available at"
         RorL = "-L"
         inner_part = " {RorL} {interface}:{local_port}:localhost:{remote_port}"
-        cmd = "ssh {host} {bg} -N {inner_part}"
+        cmd = "ssh {ignore_host} {host} {bg} -N {inner_part}"
     else:
         action = "CASTING from"
         RorL = "-R"
         inner_part = " {RorL} {interface}:{remote_port}:localhost:{local_port}"
-        cmd = "ssh {host} {bg} -N {inner_part}"
+        cmd = "ssh {ignore_host} {host} {bg} -N {inner_part}"
 
     background = "-f" if background else ""
     inner_kwargs = {"RorL": RorL, "interface": interface}
-    outer_kwargs = {"host": host, "bg": background, "inner_part": ""}
+    outer_kwargs = {"ignore_host": ignore_host, "host": host, "bg": background, "inner_part": ""}
 
     for local_p, remote_p in itertools.zip_longest(local_port, remote_port):
 
@@ -293,7 +296,7 @@ def list_user(user, user_dir):
 
 @main.command()
 def ls():
-    """ List all allowed connections """
+    """List all allowed connections"""
     # e.g. /Users and /home
     home_not_user_folder = get_user_dir("")
     on_apple = is_on_apple()
